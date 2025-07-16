@@ -3,25 +3,30 @@ import * as aws from "@pulumi/aws";
 import * as fs from "fs";
 import * as mime from "mime";
 
+const name = "pulumi-static-site";
+
 // Create an AWS resource (S3 Bucket)
-const bucket = new aws.s3.Bucket("pulumi-s3", {
+const bucket = new aws.s3.Bucket(`${name}-bucket`, {
   website: {
     indexDocument: "index.html",
   },
 });
 
-const siteConfig = new aws.s3.BucketWebsiteConfigurationV2("pulumi-s3-config", {
+const siteConfig = new aws.s3.BucketWebsiteConfigurationV2(`${name}-config`, {
   bucket: bucket.id,
   indexDocument: {
     suffix: "index.html",
   },
 });
 
-const publicAccessBlock = new aws.s3.BucketPublicAccessBlock(
-  "public-access-block",
+const bucketPublicAccessBlock = new aws.s3.BucketPublicAccessBlock(
+  `${name}-bucket-access-block`,
   {
     bucket: bucket.id,
     blockPublicAcls: false,
+    blockPublicPolicy: false,
+    ignorePublicAcls: false,
+    restrictPublicBuckets: false,
   }
 );
 
@@ -38,7 +43,7 @@ for (const item of fs.readdirSync(siteDir)) {
 }
 
 const bucketPolicy = new aws.s3.BucketPolicy(
-  "bucketPolicy",
+  `${name}-bucket-policy`,
   {
     bucket: bucket.id,
     policy: pulumi.jsonStringify({
@@ -53,7 +58,7 @@ const bucketPolicy = new aws.s3.BucketPolicy(
       ],
     }),
   },
-  { dependsOn: publicAccessBlock }
+  { dependsOn: bucketPublicAccessBlock }
 );
 
 // Stack export
