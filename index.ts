@@ -11,14 +11,12 @@ const bucket = new aws.s3.Bucket(`${name}-bucket`, {
     indexDocument: "index.html",
   },
 });
-
 const siteConfig = new aws.s3.BucketWebsiteConfigurationV2(`${name}-config`, {
   bucket: bucket.id,
   indexDocument: {
     suffix: "index.html",
   },
 });
-
 const bucketPublicAccessBlock = new aws.s3.BucketPublicAccessBlock(
   `${name}-bucket-access-block`,
   {
@@ -31,7 +29,6 @@ const bucketPublicAccessBlock = new aws.s3.BucketPublicAccessBlock(
 );
 
 const siteDir = "www";
-
 // For each file in the directory, create an S3 object stored in `siteBucket`
 for (const item of fs.readdirSync(siteDir)) {
   const filePath = require("path").join(siteDir, item);
@@ -41,7 +38,6 @@ for (const item of fs.readdirSync(siteDir)) {
     contentType: mime.getType(filePath) || undefined,
   });
 }
-
 const bucketPolicy = new aws.s3.BucketPolicy(
   `${name}-bucket-policy`,
   {
@@ -60,6 +56,100 @@ const bucketPolicy = new aws.s3.BucketPolicy(
   },
   { dependsOn: bucketPublicAccessBlock }
 );
+
+///////// ACM - CERTIFICATE
+const domainName = "ivanasimic.online";
+const certificate = new aws.acm.Certificate(`${name}-certificate`, {
+  domainName,
+  validationMethod: "DNS",
+});
+
+const certValidationRecords = certificate.domainValidationOptions.apply(
+  (options) =>
+    options.map(
+      (option, i) =>
+        new aws.route53.Record(`${name}-validation-${i}`, {
+          name: option.resourceRecordName,
+          type: option.resourceRecordType,
+          records: [option.resourceRecordValue],
+          ttl: 300,
+          zoneId: hostedZone.id,
+        })
+    )
+);
+const certValidation = new aws.acm.CertificateValidation(
+  `${name}-cert-validation`,
+  {
+    certificateArn: certificate.arn,
+    validationRecordFqdns: certValidationRecords.apply((recs) =>
+      recs.map((r) => r.fqdn)
+    ),
+  }
+);
+
+// Cloudfront
+const cloudfrontDistribution = new aws.cloudfront.Distribution(
+  `${name}-cloudfront`,
+  {
+    origins: [
+      {
+        originId: bucket.arn,
+        domainName: siteConfig.websiteEndpoint,
+        connectionAttempts: 3,
+        connectionTimeout: 10,
+        customOriginConfig: {
+          httpPort: 80,
+          httpsPort: 443,
+          originProtocolPolicy: "http-only",
+          originSslProtocols: ["TLSv1.2"],
+        },
+      },
+    ],
+    enabled: true,
+    isIpv6Enabled: true,
+    defaultRootObject: "index.html",
+    aliases: [domainName],
+    defaultCacheBehavior: {
+      targetOriginId: bucket.arn,
+      viewerProtocolPolicy: "allow-all",
+      allowedMethods: ["GET", "HEAD", "OPTIONS"],
+      cachedMethods: ["GET", "HEAD", "OPTIONS"],
+      minTtl: 0,
+      defaultTtl: 3600,
+      maxTtl: 86400,
+      forwardedValues: {
+        queryString: false,
+        cookies: { forward: "none" },
+      },
+    },
+    tags: {
+      Environment: "development",
+    },
+    viewerCertificate: {
+      acmCertificateArn: certValidation.certificateArn,
+      sslSupportMethod: "sni-only",
+      minimumProtocolVersion: "TLSv1.2_2021",
+    },
+    restrictions: {
+      geoRestriction: { restrictionType: "none" },
+    },
+  }
+);
+
+// Route 53 record (existing one)
+const hostedZone = aws.route53.getZoneOutput({ name: domainName });
+const record = new aws.route53.Record(`${name}-record`, {
+  zoneId: hostedZone.id,
+  name: domainName,
+  type: "A",
+  aliases: [
+    {
+      name: cloudfrontDistribution.domainName,
+      zoneId: cloudfrontDistribution.hostedZoneId,
+      evaluateTargetHealth: false,
+    },
+  ],
+});
 
 // Stack export
 export const bucketName = bucket.id;
