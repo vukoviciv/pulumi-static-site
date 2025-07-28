@@ -59,31 +59,34 @@ const bucketPolicy = new aws.s3.BucketPolicy(
 
 ///////// ACM - CERTIFICATE
 const domainName = "ivanasimic.online";
+const hostedZone = aws.route53.getZoneOutput({ name: domainName });
+
 const certificate = new aws.acm.Certificate(`${name}-certificate`, {
   domainName,
   validationMethod: "DNS",
 });
 
-const certValidationRecords = certificate.domainValidationOptions.apply(
-  (options) =>
-    options.map(
-      (option, i) =>
-        new aws.route53.Record(`${name}-validation-${i}`, {
-          name: option.resourceRecordName,
-          type: option.resourceRecordType,
-          records: [option.resourceRecordValue],
-          ttl: 300,
-          zoneId: hostedZone.id,
-        })
-    )
+// DNS validation
+
+const validationRecords: aws.route53.Record[] = [];
+
+const validationRecord = certificate.domainValidationOptions.apply(
+  (domainValidationOpts) =>
+    new aws.route53.Record(`${name}-cert-validation-record`, {
+      name: domainValidationOpts[0].resourceRecordName,
+      type: domainValidationOpts[0].resourceRecordType,
+      ttl: 300,
+      records: [domainValidationOpts[0].resourceRecordValue],
+      zoneId: hostedZone.id,
+      allowOverwrite: true,
+    })
 );
-const certValidation = new aws.acm.CertificateValidation(
+
+export const certificateValidation = new aws.acm.CertificateValidation(
   `${name}-cert-validation`,
   {
     certificateArn: certificate.arn,
-    validationRecordFqdns: certValidationRecords.apply((recs) =>
-      recs.map((r) => r.fqdn)
-    ),
+    validationRecordFqdns: validationRecords.map((record) => record.fqdn),
   }
 );
 
@@ -126,7 +129,7 @@ const cloudfrontDistribution = new aws.cloudfront.Distribution(
       Environment: "development",
     },
     viewerCertificate: {
-      acmCertificateArn: certValidation.certificateArn,
+      acmCertificateArn: certificateValidation.certificateArn,
       sslSupportMethod: "sni-only",
       minimumProtocolVersion: "TLSv1.2_2021",
     },
@@ -137,7 +140,6 @@ const cloudfrontDistribution = new aws.cloudfront.Distribution(
 );
 
 // Route 53 record (existing one)
-const hostedZone = aws.route53.getZoneOutput({ name: domainName });
 const record = new aws.route53.Record(`${name}-record`, {
   zoneId: hostedZone.id,
   name: domainName,
