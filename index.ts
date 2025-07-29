@@ -1,10 +1,12 @@
 import * as aws from "@pulumi/aws";
 import { S3Bucket } from "./infrastructure/bucket";
+import { createRecord } from "./infrastructure/route53";
 const name = "pulumi-static-v3";
 
 const s3bucket = new S3Bucket(name);
 
 ///////// ACM - CERTIFICATE
+// TODO: make custom domain optional
 const domainName = "ivanasimic.online";
 const hostedZone = aws.route53.getZoneOutput({ name: domainName });
 
@@ -84,19 +86,13 @@ const cloudfrontDistribution = new aws.cloudfront.Distribution(
   }
 );
 
-// Route 53 record (existing one)
-const record = new aws.route53.Record(`${name}-record`, {
-  zoneId: hostedZone.id,
-  name: domainName,
-  type: "A",
-  aliases: [
-    {
-      name: cloudfrontDistribution.domainName,
-      zoneId: cloudfrontDistribution.hostedZoneId,
-      evaluateTargetHealth: false,
-    },
-  ],
-});
+// TODO: optional custom domain name
+const record = createRecord(
+  name,
+  hostedZone,
+  domainName,
+  cloudfrontDistribution
+);
 
 // Stack export
 export const bucketName = s3bucket.bucket.id;
