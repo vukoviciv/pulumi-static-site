@@ -3,7 +3,7 @@ import * as aws from "@pulumi/aws";
 import * as fs from "fs";
 import * as mime from "mime";
 
-const name = "pulumi-static-site";
+const name = "pulumi-static-v2";
 
 // Create an AWS resource (S3 Bucket)
 const bucket = new aws.s3.Bucket(`${name}-bucket`, {
@@ -67,9 +67,7 @@ const certificate = new aws.acm.Certificate(`${name}-certificate`, {
 });
 
 // DNS validation
-
 const validationRecords: aws.route53.Record[] = [];
-
 const validationRecord = certificate.domainValidationOptions.apply(
   (domainValidationOpts) =>
     new aws.route53.Record(`${name}-cert-validation-record`, {
