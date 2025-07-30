@@ -1,43 +1,18 @@
 import * as aws from "@pulumi/aws";
 import { S3Bucket } from "./infrastructure/bucket";
 import { createRecord } from "./infrastructure/route53";
+import { AcmCertificate } from "./infrastructure/acm-certificate";
 
-const name = "pulumi-static-v3";
+const name = "pulumi-static-v4";
 
 const s3bucket = new S3Bucket(name);
 
-///////// ACM - CERTIFICATE
-// TODO: make custom domain optional
 const domainName = "ivanasimic.online";
 const hostedZone = aws.route53.getZoneOutput({ name: domainName });
 
-const certificate = new aws.acm.Certificate(`${name}-certificate`, {
-  domainName,
-  validationMethod: "DNS",
-});
+const certificate = new AcmCertificate(domainName, hostedZone.id);
 
-// DNS validation
-const validationRecords: aws.route53.Record[] = [];
-const validationRecord = certificate.domainValidationOptions.apply(
-  (domainValidationOpts) =>
-    new aws.route53.Record(`${name}-cert-validation-record`, {
-      name: domainValidationOpts[0].resourceRecordName,
-      type: domainValidationOpts[0].resourceRecordType,
-      ttl: 300,
-      records: [domainValidationOpts[0].resourceRecordValue],
-      zoneId: hostedZone.id,
-      allowOverwrite: true,
-    })
-);
-
-export const certificateValidation = new aws.acm.CertificateValidation(
-  `${name}-cert-validation`,
-  {
-    certificateArn: certificate.arn,
-    validationRecordFqdns: validationRecords.map((record) => record.fqdn),
-  }
-);
-
+// Cloudfront
 const cloudfrontDistribution = new aws.cloudfront.Distribution(
   `${name}-cloudfront`,
   {
@@ -76,14 +51,15 @@ const cloudfrontDistribution = new aws.cloudfront.Distribution(
       Environment: "development",
     },
     viewerCertificate: {
-      acmCertificateArn: certificateValidation.certificateArn,
+      acmCertificateArn: certificate.validation.certificateArn,
       sslSupportMethod: "sni-only",
       minimumProtocolVersion: "TLSv1.2_2021",
     },
     restrictions: {
       geoRestriction: { restrictionType: "none" },
     },
-  }
+  },
+  { deleteBeforeReplace: true, dependsOn: [certificate.validation] }
 );
 
 const record = createRecord(
