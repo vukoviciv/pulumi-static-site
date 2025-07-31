@@ -1,29 +1,30 @@
 import * as aws from "@pulumi/aws";
 import { S3Bucket } from "./infrastructure/bucket";
-import { createRecord } from "./infrastructure/route53";
+import { DnsRecord } from "./infrastructure/route53";
 import { AcmCertificate } from "./infrastructure/acm-certificate";
-import { createCloudfrontDistribution } from "./infrastructure/cloudfront";
+import { Cloudfront } from "./infrastructure/cloudfront";
 
-const name = "pulumi-static-v5";
+const name = "pulumi-static-v7";
 
 const s3bucket = new S3Bucket(name);
 const domainName = "ivanasimic.online";
 const hostedZone = aws.route53.getZoneOutput({ name: domainName });
 
-const certificate = new AcmCertificate(domainName, hostedZone.id);
-const cloudfrontDistribution = createCloudfrontDistribution(
-  name,
+const certificate = new AcmCertificate(name, {
+  domainName,
+  hostedZoneId: hostedZone.id,
+});
+const cloudfrontDistribution = new Cloudfront(name, {
   s3bucket,
-  certificate.validation,
-  domainName
-);
+  domainName,
+  certificateValidation: certificate.validation,
+});
 
-const record = createRecord(
-  name,
+const record = new DnsRecord(name, {
   hostedZone,
   domainName,
-  cloudfrontDistribution
-);
+  cloudfrontDistribution: cloudfrontDistribution.distribution,
+});
 
 export const bucketName = s3bucket.bucket.id;
 export const websiteUrl = s3bucket.siteConfig.websiteEndpoint;

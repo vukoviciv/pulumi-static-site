@@ -1,45 +1,50 @@
 import * as aws from "@pulumi/aws";
-import { Output } from "@pulumi/pulumi";
+import { ComponentResource, Output } from "@pulumi/pulumi";
 
-export class AcmCertificate {
+type ComponentArgs = {
   domainName: string;
-  certificate: aws.acm.Certificate;
   hostedZoneId: Output<string>;
+};
+export class AcmCertificate extends ComponentResource {
+  certificate: aws.acm.Certificate;
   validation: aws.acm.CertificateValidation;
 
-  constructor(domainName: string, hostedZoneId: Output<string>) {
-    this.domainName = domainName;
-    this.hostedZoneId = hostedZoneId;
+  constructor(name: string, componentArgs: ComponentArgs) {
+    super("pulumiS3:acm:Certificate", name, {}, {});
 
     this.certificate = new aws.acm.Certificate(
-      `${this.domainName}-certificate`,
+      `${componentArgs.domainName}-certificate`,
       {
-        domainName: this.domainName,
+        domainName: componentArgs.domainName,
         validationMethod: "DNS",
-      }
+      },
+      { parent: this }
     );
 
     const dvo = this.certificate.domainValidationOptions[0];
     const certificateValidationDomain = new aws.route53.Record(
-      `${this.domainName}-cert-validation-domain`,
+      `${componentArgs.domainName}-cert-validation-domain`,
       {
         name: dvo.resourceRecordName,
         type: dvo.resourceRecordType,
-        zoneId: this.hostedZoneId,
+        zoneId: componentArgs.hostedZoneId,
         records: [dvo.resourceRecordValue],
         ttl: 300,
       },
       {
+        parent: this,
         deleteBeforeReplace: true,
       }
     );
 
+    // TODO: this doesn't have to be class prop
     this.validation = new aws.acm.CertificateValidation(
-      `${this.domainName}-cert-validation`,
+      `${componentArgs.domainName}-cert-validation`,
       {
         certificateArn: this.certificate.arn,
         validationRecordFqdns: [certificateValidationDomain.fqdn],
-      }
+      },
+      { parent: this }
     );
   }
 }
