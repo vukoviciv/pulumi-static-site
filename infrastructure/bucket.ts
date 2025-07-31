@@ -25,6 +25,8 @@ export class S3Bucket extends pulumi.ComponentResource {
 
     this.createBucketPolicy();
     this.deployFrontend(componentArgs.siteDir || SITE_DIR);
+
+    this.registerOutputs();
   }
 
   private createBucket() {

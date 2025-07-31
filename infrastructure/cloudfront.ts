@@ -66,5 +66,7 @@ export class Cloudfront extends pulumi.ComponentResource {
         dependsOn: [componentArgs.certificateValidation],
       }
     );
+
+    this.registerOutputs();
   }
 }
