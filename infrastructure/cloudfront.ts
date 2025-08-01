@@ -1,9 +1,9 @@
 import { acm, cloudfront, s3 } from "@pulumi/aws";
-import { S3Bucket } from "./bucket";
+import { StaticSiteBucket } from "./bucket";
 import * as pulumi from "@pulumi/pulumi";
 
 type ComponentArgs = {
-  s3bucket: S3Bucket;
+  siteBucket: StaticSiteBucket;
   certificateValidation: acm.CertificateValidation;
   domainName: string;
 };
@@ -19,8 +19,8 @@ export class Cloudfront extends pulumi.ComponentResource {
       {
         origins: [
           {
-            originId: componentArgs.s3bucket.bucket.arn,
-            domainName: componentArgs.s3bucket.siteConfig.websiteEndpoint,
+            originId: componentArgs.siteBucket.bucket.arn,
+            domainName: componentArgs.siteBucket.siteConfig.websiteEndpoint,
             connectionAttempts: 3,
             connectionTimeout: 10,
             customOriginConfig: {
@@ -36,7 +36,7 @@ export class Cloudfront extends pulumi.ComponentResource {
         defaultRootObject: "index.html",
         aliases: [componentArgs.domainName],
         defaultCacheBehavior: {
-          targetOriginId: componentArgs.s3bucket.bucket.arn,
+          targetOriginId: componentArgs.siteBucket.bucket.arn,
           viewerProtocolPolicy: "allow-all",
           allowedMethods: ["GET", "HEAD", "OPTIONS"],
           cachedMethods: ["GET", "HEAD", "OPTIONS"],

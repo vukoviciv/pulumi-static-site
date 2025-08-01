@@ -8,9 +8,7 @@ const SITE_DIR = "www";
 type ComponentArgs = {
   siteDir?: string;
 };
-
-// TODO: fix naming!
-export class S3Bucket extends pulumi.ComponentResource {
+export class StaticSiteBucket extends pulumi.ComponentResource {
   name: string;
   publicAccessBlock: s3.BucketPublicAccessBlock;
   siteConfig: s3.BucketWebsiteConfigurationV2;
