@@ -3,10 +3,8 @@ import * as mime from "mime";
 import * as pulumi from "@pulumi/pulumi";
 import * as fs from "fs";
 
-const SITE_DIR = "www";
-
 type ComponentArgs = {
-  siteDir?: string;
+  siteDir: string;
 };
 export class StaticSiteBucket extends pulumi.ComponentResource {
   name: string;
@@ -14,7 +12,7 @@ export class StaticSiteBucket extends pulumi.ComponentResource {
   siteConfig: s3.BucketWebsiteConfigurationV2;
   bucket: s3.Bucket;
 
-  constructor(name: string, componentArgs: ComponentArgs = {}) {
+  constructor(name: string, componentArgs: ComponentArgs) {
     super("pulumiS3:s3:Bucket", name, {}, {});
 
     this.name = name;
@@ -23,7 +21,7 @@ export class StaticSiteBucket extends pulumi.ComponentResource {
     this.siteConfig = this.createSiteConfig();
 
     this.createBucketPolicy();
-    this.deployFrontend(componentArgs.siteDir || SITE_DIR);
+    this.deployFrontend(componentArgs.siteDir);
 
     this.registerOutputs();
   }

@@ -7,6 +7,7 @@ import { AcmCertificate } from "./acm-certificate";
 
 type ComponentArgs = {
   customDomainName: string;
+  siteDir: string;
 };
 
 export class StaticSite extends ComponentResource {
@@ -15,7 +16,9 @@ export class StaticSite extends ComponentResource {
   constructor(name: string, componentArgs: ComponentArgs) {
     super("pulumiS3:StaticSite", name, {}, {});
 
-    this.siteBucket = new StaticSiteBucket(name);
+    this.siteBucket = new StaticSiteBucket(name, {
+      siteDir: componentArgs.siteDir,
+    });
     const hostedZone = route53.getZoneOutput({
       name: componentArgs.customDomainName,
     });
