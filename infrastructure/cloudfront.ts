@@ -1,4 +1,4 @@
-import { acm, cloudfront, s3 } from "@pulumi/aws";
+import { acm, cloudfront } from "@pulumi/aws";
 import { StaticSiteBucket } from "./bucket";
 import * as pulumi from "@pulumi/pulumi";
 

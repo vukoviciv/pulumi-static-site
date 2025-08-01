@@ -4,7 +4,6 @@ import { Cloudfront } from "./cloudfront";
 import { StaticSiteBucket } from "./bucket";
 import { DnsRecord } from "./route53";
 import { AcmCertificate } from "./acm-certificate";
-import * as aws from "@pulumi/aws";
 
 type ComponentArgs = {
   customDomainName: string;
