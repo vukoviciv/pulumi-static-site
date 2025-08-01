@@ -37,7 +37,6 @@ export class AcmCertificate extends ComponentResource {
       }
     );
 
-    // TODO: this doesn't have to be class prop
     this.validation = new aws.acm.CertificateValidation(
       `${componentArgs.domainName}-cert-validation`,
       {
@@ -46,5 +45,7 @@ export class AcmCertificate extends ComponentResource {
       },
       { parent: this }
     );
+
+    this.registerOutputs();
   }
 }

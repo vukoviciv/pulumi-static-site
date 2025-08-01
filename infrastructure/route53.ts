@@ -27,5 +27,7 @@ export class DnsRecord extends pulumi.ComponentResource {
       },
       { parent: this, deleteBeforeReplace: true }
     );
+
+    this.registerOutputs();
   }
 }

@@ -8,8 +8,7 @@ const SITE_DIR = "www";
 type ComponentArgs = {
   siteDir?: string;
 };
-
-export class S3Bucket extends pulumi.ComponentResource {
+export class StaticSiteBucket extends pulumi.ComponentResource {
   name: string;
   publicAccessBlock: s3.BucketPublicAccessBlock;
   siteConfig: s3.BucketWebsiteConfigurationV2;
@@ -25,6 +24,8 @@ export class S3Bucket extends pulumi.ComponentResource {
 
     this.createBucketPolicy();
     this.deployFrontend(componentArgs.siteDir || SITE_DIR);
+
+    this.registerOutputs();
   }
 
   private createBucket() {
