@@ -9,6 +9,7 @@ type ComponentArgs = {
   siteDir?: string;
 };
 
+// TODO: fix naming!
 export class S3Bucket extends pulumi.ComponentResource {
   name: string;
   publicAccessBlock: s3.BucketPublicAccessBlock;
