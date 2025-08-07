@@ -1,2 +1,4 @@
 config:
   aws:region: us-east-1
+  siteDir: app/dist
+  customDomain: ivanasimic.online
