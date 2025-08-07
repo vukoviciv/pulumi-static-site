@@ -1,6 +1,10 @@
 {
     "name": "pulumi-s3",
     "main": "index.ts",
+    "scripts": {
+        "build": "npm --prefix app run build",
+        "pulumi:deploy:client": "bash scripts/deploy-client.sh"
+    },
     "devDependencies": {
         "@types/mime": "^3.0.4",
         "@types/node": "^18",
