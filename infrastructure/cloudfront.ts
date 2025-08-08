@@ -4,8 +4,8 @@ import * as pulumi from "@pulumi/pulumi";
 
 type ComponentArgs = {
   siteBucket: StaticSiteBucket;
-  certificateValidation: acm.CertificateValidation;
-  domainName: string;
+  certificateValidation?: acm.CertificateValidation;
+  domainName?: string;
 };
 
 export class Cloudfront extends pulumi.ComponentResource {
@@ -14,13 +14,23 @@ export class Cloudfront extends pulumi.ComponentResource {
   constructor(name: string, componentArgs: ComponentArgs) {
     super("pulumiS3:cloudfront:Distribution", name, {}, {});
 
+    const { siteBucket, certificateValidation, domainName } = componentArgs;
+
+    const viewerCertificate = certificateValidation
+      ? {
+          acmCertificateArn: certificateValidation.certificateArn,
+          sslSupportMethod: "sni-only",
+          minimumProtocolVersion: "TLSv1.2_2021",
+        }
+      : { cloudfrontDefaultCertificate: true };
+
     this.distribution = new cloudfront.Distribution(
       `${name}-cloudfront`,
       {
         origins: [
           {
-            originId: componentArgs.siteBucket.bucket.arn,
-            domainName: componentArgs.siteBucket.siteConfig.websiteEndpoint,
+            originId: siteBucket.bucket.arn,
+            domainName: siteBucket.siteConfig.websiteEndpoint,
             connectionAttempts: 3,
             connectionTimeout: 10,
             customOriginConfig: {
@@ -34,9 +44,9 @@ export class Cloudfront extends pulumi.ComponentResource {
         enabled: true,
         isIpv6Enabled: true,
         defaultRootObject: "index.html",
-        aliases: [componentArgs.domainName],
+        aliases: domainName ? [domainName] : undefined,
         defaultCacheBehavior: {
-          targetOriginId: componentArgs.siteBucket.bucket.arn,
+          targetOriginId: siteBucket.bucket.arn,
           viewerProtocolPolicy: "allow-all",
           allowedMethods: ["GET", "HEAD", "OPTIONS"],
           cachedMethods: ["GET", "HEAD", "OPTIONS"],
@@ -51,11 +61,7 @@ export class Cloudfront extends pulumi.ComponentResource {
         tags: {
           Environment: "development",
         },
-        viewerCertificate: {
-          acmCertificateArn: componentArgs.certificateValidation.certificateArn,
-          sslSupportMethod: "sni-only",
-          minimumProtocolVersion: "TLSv1.2_2021",
-        },
+        viewerCertificate,
         restrictions: {
           geoRestriction: { restrictionType: "none" },
         },
@@ -63,7 +69,7 @@ export class Cloudfront extends pulumi.ComponentResource {
       {
         parent: this,
         deleteBeforeReplace: true,
-        dependsOn: [componentArgs.certificateValidation],
+        dependsOn: certificateValidation ? [certificateValidation] : [],
       }
     );
 
