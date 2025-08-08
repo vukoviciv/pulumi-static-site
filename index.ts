@@ -1,11 +1,9 @@
 import { StaticSite } from "./infrastructure/static-site";
 import * as pulumi from "@pulumi/pulumi";
 
-const name = "pulumi-static-v10";
-
 const config = new pulumi.Config();
 const siteDir = config.require("siteDir");
-
+const name = config.require("name");
 const customDomainName = config.get("customDomain");
 
 const site = new StaticSite(name, { customDomainName, siteDir });
