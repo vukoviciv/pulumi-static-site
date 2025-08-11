@@ -1,3 +1,3 @@
 export function getHelloMessage() {
-  return "Hello world";
+  return { msg: "Hello world" };
 }

@@ -4,6 +4,6 @@ export class GoodbyeController {
   }
 
   getGoodbye(_req, res) {
-    res.send(this.service.getGoodbyeMessage());
+    res.json(this.service.getGoodbyeMessage());
   }
 }

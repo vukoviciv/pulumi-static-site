@@ -4,6 +4,6 @@ export class HelloController {
   }
 
   getHello(_req, res) {
-    res.send(this.service.getHelloMessage());
+    res.json(this.service.getHelloMessage());
   }
 }
