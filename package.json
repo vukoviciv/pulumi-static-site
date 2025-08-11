@@ -1,20 +1,8 @@
 {
-    "name": "pulumi-s3",
-    "main": "index.ts",
-    "scripts": {
-        "build:client": "npm --prefix app run build",
-        "pulumi:deploy:client": "bash scripts/deploy-client.sh",
-        "deploy": "pulumi up --yes && npm run pulumi:deploy:client"
-    },
-    "devDependencies": {
-        "@types/mime": "^3.0.4",
-        "@types/node": "^18",
-        "typescript": "^5.0.0"
-    },
-    "dependencies": {
-        "@pulumi/aws": "^6.0.0",
-        "@pulumi/awsx": "^2.0.2",
-        "@pulumi/pulumi": "^3.113.0",
-        "mime": "^3.0.0"
-    }
+  "name": "pulumi-s3",
+  "scripts": {
+    "build:client": "npm --prefix app run build",
+    "pulumi:deploy:client": "bash scripts/deploy-client.sh",
+    "deploy": "npm run deploy --prefix infrastructure && npm run pulumi:deploy:client"
+  }
 }
