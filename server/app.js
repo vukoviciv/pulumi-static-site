@@ -4,7 +4,8 @@ import goodbyeRouter from "./src/hello-world-module/api/goodbye/goodbye.router.j
 
 const app = express();
 
-app.use("/", helloRouter);
+// Register routers
+app.use("/hello", helloRouter);
 app.use("/goodbye", goodbyeRouter);
 
 export default app;
