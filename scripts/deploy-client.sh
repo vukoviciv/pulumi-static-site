@@ -1,7 +1,7 @@
 #!/bin/bash
 
-SITE_BUCKET_NAME=$(pulumi stack output bucketName)
-CDN_ID=$(pulumi stack output cdnDistributionId)
+SITE_BUCKET_NAME=$(pulumi -C infrastructure stack output bucketName)
+CDN_ID=$(pulumi -C infrastructure stack output cdnDistributionId)
 
 echo "Building client"
 npm run build:client
