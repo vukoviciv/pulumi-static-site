@@ -1,7 +1,12 @@
-import express from "express";
+import app from "./app.js";
 
-const app = express();
-const port = 3000; // TODO: IMPORT from ENV
+// TODO: import port and serverUrl from env
+const port = 3000;
+const serverUrl = `http://localhost:${port}`;
 
-app.get("/", (req, res) => res.send("Hello world"));
-app.listen(port, () => console.log(`App listening to port: ${port}`));
+app.listen(port, () => onListening());
+
+function onListening() {
+  console.log(`App listening to port: ${port}`);
+  console.log(`Available on: ${serverUrl}`);
+}
