@@ -7,6 +7,7 @@
 <script setup lang="ts">
 import HelloWorld from "./components/HelloWorld.vue";
 import { get as getHello } from "@/api/hello"; // TODO: fix lint error
+import { get as getGoodbye } from "@/api/goodbye"; // TODO: fix lint error
 import { ref } from "vue";
 
 const msg = ref("Pulumi static");
@@ -17,7 +18,8 @@ const handleHello = async () => {
 };
 
 const handleGoodbye = async () => {
-  msg.value = "mocked goodbye";
+  const response = await getGoodbye();
+  msg.value = response.msg;
 };
 </script>
 
