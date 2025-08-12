@@ -3,6 +3,10 @@
   "scripts": {
     "build:client": "npm --prefix app run build",
     "pulumi:deploy:client": "bash scripts/deploy-client.sh",
-    "deploy": "npm run deploy --prefix infrastructure && npm run pulumi:deploy:client"
+    "deploy": "npm run deploy --prefix infrastructure && npm run pulumi:deploy:client",
+    "dev:start": "concurrently 'npm run dev:server --prefix server' 'npm run dev --prefix app'"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
   }
 }
