@@ -19,3 +19,9 @@ Client application is located in `app`.
     ```bash
       npm run deploy
     ```
+
+2.  Run for development:
+
+    ```bash
+      npm run dev:start
+    ```
