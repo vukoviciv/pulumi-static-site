@@ -6,8 +6,8 @@
 
 <script setup lang="ts">
 import HelloWorld from "./components/HelloWorld.vue";
-import { get as getHello } from "@/api/hello"; // TODO: fix lint error
-import { get as getGoodbye } from "@/api/goodbye"; // TODO: fix lint error
+import { get as getHello } from "@/api/hello";
+import { get as getGoodbye } from "@/api/goodbye";
 import { ref } from "vue";
 
 const msg = ref("Pulumi static");
