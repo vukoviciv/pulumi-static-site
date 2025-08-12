@@ -1,4 +1,4 @@
-import { StaticSite } from "./static-site";
+import { StaticSite } from "./components/static-site";
 import * as pulumi from "@pulumi/pulumi";
 
 const config = new pulumi.Config();
