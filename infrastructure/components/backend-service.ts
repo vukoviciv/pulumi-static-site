@@ -8,6 +8,7 @@ export class BackendService extends pulumi.ComponentResource {
   constructor(name: string) {
     super("pulumi:ECS", name, {}, {});
 
+    // TODO: extract repo, image and cluster
     const repository = new awsx.ecr.Repository(
       `${name}-ecr-repository`,
       {
@@ -26,14 +27,18 @@ export class BackendService extends pulumi.ComponentResource {
     );
 
     const cluster = new aws.ecs.Cluster(`${name}-cluster`);
+    this.lb = new awsx.lb.ApplicationLoadBalancer(
+      `${name}-lb`,
+      {},
+      { parent: this }
+    );
 
-    this.lb = new awsx.lb.ApplicationLoadBalancer(`${name}-lb`);
-
-    const server = new awsx.ecs.FargateService(
+    const service = new awsx.ecs.FargateService(
       `${name}-fargate-service`,
       {
         cluster: cluster.arn,
         assignPublicIp: true,
+        desiredCount: 2,
         taskDefinitionArgs: {
           container: {
             name: `${name}-container`,
@@ -44,14 +49,14 @@ export class BackendService extends pulumi.ComponentResource {
             portMappings: [
               {
                 containerPort: 3000,
+                hostPort: 3000,
                 targetGroup: this.lb.defaultTargetGroup,
               },
             ],
           },
-          executionRole: undefined,
         },
       },
-      { parent: this }
+      { parent: this, dependsOn: [this.lb] }
     );
 
     this.registerOutputs();
