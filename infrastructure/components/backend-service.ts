@@ -27,6 +27,7 @@ export class BackendService extends pulumi.ComponentResource {
     );
 
     const cluster = new aws.ecs.Cluster(`${name}-cluster`);
+
     this.lb = new awsx.lb.ApplicationLoadBalancer(
       `${name}-lb`,
       {},
