@@ -16,4 +16,8 @@ app.use(cors(corsOptions));
 app.use("/hello", helloRouter);
 app.use("/goodbye", goodbyeRouter);
 
+app.get("/healthcheck", (_req, res) => {
+  res.send();
+});
+
 export default app;

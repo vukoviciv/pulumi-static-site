@@ -27,10 +27,13 @@ export class BackendService extends pulumi.ComponentResource {
     );
 
     const cluster = new aws.ecs.Cluster(`${name}-cluster`);
+    // TODO: custom VPC
 
     this.lb = new awsx.lb.ApplicationLoadBalancer(
       `${name}-lb`,
-      {},
+      {
+        defaultTargetGroupPort: 3000,
+      },
       { parent: this }
     );
 
@@ -63,3 +66,5 @@ export class BackendService extends pulumi.ComponentResource {
     this.registerOutputs();
   }
 }
+
+// DNS... api.<custom-domain>
