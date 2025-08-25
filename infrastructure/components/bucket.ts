@@ -39,7 +39,7 @@ export class StaticSiteBucket extends pulumi.ComponentResource {
         ignorePublicAcls: false,
         restrictPublicBuckets: false,
       },
-      { parent: this }
+      { parent: this, dependsOn: [this.bucket] }
     );
   }
 
@@ -50,7 +50,7 @@ export class StaticSiteBucket extends pulumi.ComponentResource {
         bucket: this.bucket.id,
         indexDocument: { suffix: "index.html" },
       },
-      { parent: this }
+      { parent: this, dependsOn: [this.bucket] }
     );
   }
 
@@ -71,7 +71,7 @@ export class StaticSiteBucket extends pulumi.ComponentResource {
           ],
         }),
       },
-      { parent: this, dependsOn: this.publicAccessBlock }
+      { parent: this, dependsOn: [this.publicAccessBlock] }
     );
   }
 }
