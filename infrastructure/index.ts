@@ -11,5 +11,7 @@ const site = new StaticSite(name, { customDomainName, siteDir });
 const backend = new BackendService(name);
 
 export const websiteUrl = site.siteBucket.siteConfig.websiteEndpoint;
+export const bucketName = site.siteBucket.name;
+export const cdnDistributionId = site.cloudfrontDistribution.id;
 export const cdnDomainName = site.cloudfrontDistribution.domainName;
 export const url = pulumi.interpolate`http://${backend.lb.dnsName}`;
