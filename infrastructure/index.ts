@@ -12,5 +12,4 @@ const backend = new BackendService(name);
 
 export const websiteUrl = site.siteBucket.siteConfig.websiteEndpoint;
 export const cdnDomainName = site.cloudfrontDistribution.domainName;
-export const loadbalancer = backend.lb.loadBalancer;
-export const url = pulumi.interpolate`http://${backend.lb.loadBalancer.dnsName}`;
+export const url = pulumi.interpolate`http://${backend.lb.dnsName}`;
