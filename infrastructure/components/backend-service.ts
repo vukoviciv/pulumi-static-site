@@ -2,7 +2,7 @@ import * as pulumi from "@pulumi/pulumi";
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
 import { AcmCertificate } from "./acm-certificate";
-import { DnsRecord } from "./route53";
+import { DnsRecord } from "./dns-record";
 
 type ComponentArgs = {
   imageUri: pulumi.Output<string>;

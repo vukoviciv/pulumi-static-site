@@ -2,7 +2,7 @@ import { ComponentResource, Output } from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import { Cloudfront } from "./cloudfront";
 import { StaticSiteBucket } from "./bucket";
-import { DnsRecord } from "./route53";
+import { DnsRecord } from "./dns-record";
 import { AcmCertificate } from "./acm-certificate";
 
 type ComponentArgs = {
