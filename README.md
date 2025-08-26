@@ -10,7 +10,7 @@ Spin up simple static site with Pulumi.
 
 ## Getting Started
 
-Set your custom domain and project name in `pulumi.dev.yaml` using `customDomain` and `name` parameters, respectively. Custom domain is optional.
+Set your custom domain and project name in `pulumi.<stack>.yaml` using `customDomain` and `name` parameters, respectively. Custom domain is optional.
 
 Client application is located in `app`.
 
