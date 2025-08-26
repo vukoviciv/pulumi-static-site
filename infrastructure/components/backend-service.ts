@@ -2,28 +2,15 @@ import * as pulumi from "@pulumi/pulumi";
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
 
+type ComponentArgs = {
+  imageUri: pulumi.Output<string>;
+};
+
 export class BackendService extends pulumi.ComponentResource {
   lb: aws.lb.LoadBalancer;
 
-  constructor(name: string) {
+  constructor(name: string, componentArgs: ComponentArgs) {
     super("pulumi:ECS", name, {}, {});
-    // TODO: extract repo, image and cluster
-    const repository = new awsx.ecr.Repository(
-      `${name}-ecr-repository`,
-      {
-        forceDelete: true,
-      },
-      { parent: this }
-    );
-
-    const image = new awsx.ecr.Image(
-      `${name}-image`,
-      {
-        repositoryUrl: repository.url,
-        context: "../server",
-      },
-      { parent: this }
-    );
 
     const cluster = new aws.ecs.Cluster(`${name}-cluster`);
 
@@ -152,7 +139,7 @@ export class BackendService extends pulumi.ComponentResource {
         taskDefinitionArgs: {
           container: {
             name: `${name}-container`,
-            image: image.imageUri,
+            image: componentArgs.imageUri,
             cpu: 128,
             memory: 512,
             essential: true,

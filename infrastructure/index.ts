@@ -1,5 +1,6 @@
 import { StaticSite } from "./components/static-site";
 import { BackendService } from "./components/backend-service";
+import { EcrImage } from "./components/ecr-image";
 import * as pulumi from "@pulumi/pulumi";
 
 const config = new pulumi.Config();
@@ -8,7 +9,8 @@ const name = config.require("name");
 const customDomainName = config.get("customDomain");
 
 const site = new StaticSite(name, { customDomainName, siteDir });
-const backend = new BackendService(name);
+const ecrImage = new EcrImage(name);
+const backend = new BackendService(name, { imageUri: ecrImage.image.imageUri });
 
 export const websiteUrl = site.siteBucket.siteConfig.websiteEndpoint;
 export const bucketId = site.siteBucket.bucket.id;
