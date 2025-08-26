@@ -1,0 +1,4 @@
+config:
+  ecs-s3-custom:siteDir: dir
+  ecs-s3-custom:name: ecs-s3-custom-domain
+  customDomain: ivanasimic.online
