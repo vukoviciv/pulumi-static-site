@@ -10,7 +10,10 @@ const customDomainName = config.get("customDomain");
 
 const site = new StaticSite(name, { customDomainName, siteDir });
 const ecrImage = new EcrImage(name);
-const backend = new BackendService(name, { imageUri: ecrImage.image.imageUri });
+const backend = new BackendService(name, {
+  customDomainName,
+  imageUri: ecrImage.image.imageUri,
+});
 
 export const websiteUrl = site.siteBucket.siteConfig.websiteEndpoint;
 export const bucketId = site.siteBucket.bucket.id;

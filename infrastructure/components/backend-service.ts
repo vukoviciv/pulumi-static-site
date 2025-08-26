@@ -1,18 +1,29 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
+import { AcmCertificate } from "./acm-certificate";
 
 type ComponentArgs = {
   imageUri: pulumi.Output<string>;
+  customDomainName?: string;
 };
 
 export class BackendService extends pulumi.ComponentResource {
   lb: aws.lb.LoadBalancer;
+  apiDomain?: string;
 
   constructor(name: string, componentArgs: ComponentArgs) {
     super("pulumi:ECS", name, {}, {});
 
-    const cluster = new aws.ecs.Cluster(`${name}-cluster`);
+    if (componentArgs.customDomainName) {
+      this.apiDomain = `api.${componentArgs.customDomainName}`;
+    }
+
+    const cluster = new aws.ecs.Cluster(
+      `${name}-cluster`,
+      {},
+      { parent: this }
+    );
 
     const vpc = new awsx.ec2.Vpc(
       `${name}-vpc`,
@@ -29,6 +40,21 @@ export class BackendService extends pulumi.ComponentResource {
       },
       { parent: this }
     );
+
+    if (this.apiDomain) {
+      const hostedZone = aws.route53.getZoneOutput({
+        name: componentArgs.customDomainName,
+      });
+
+      const certificate = new AcmCertificate(
+        name,
+        {
+          domainName: this.apiDomain,
+          hostedZoneId: hostedZone.id,
+        },
+        { parent: this }
+      );
+    }
 
     const lbSecurityGroup = new aws.ec2.SecurityGroup(
       `${name}-lb-security-group`,
