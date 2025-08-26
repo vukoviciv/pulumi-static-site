@@ -1,31 +1,30 @@
 import * as pulumi from "@pulumi/pulumi";
 import * as awsx from "@pulumi/awsx";
 import * as aws from "@pulumi/aws";
+import { AcmCertificate } from "./acm-certificate";
+import { DnsRecord } from "./route53";
+
+type ComponentArgs = {
+  imageUri: pulumi.Output<string>;
+  customDomainName?: string;
+};
 
 export class BackendService extends pulumi.ComponentResource {
   lb: aws.lb.LoadBalancer;
+  apiUrl: pulumi.Output<string>;
+  lbTargetGroup: aws.lb.TargetGroup;
+  apiDomain?: string;
 
-  constructor(name: string) {
+  constructor(name: string, componentArgs: ComponentArgs) {
     super("pulumi:ECS", name, {}, {});
-    // TODO: extract repo, image and cluster
-    const repository = new awsx.ecr.Repository(
-      `${name}-ecr-repository`,
-      {
-        forceDelete: true,
-      },
+
+    const { customDomainName, imageUri } = componentArgs;
+
+    const cluster = new aws.ecs.Cluster(
+      `${name}-cluster`,
+      {},
       { parent: this }
     );
-
-    const image = new awsx.ecr.Image(
-      `${name}-image`,
-      {
-        repositoryUrl: repository.url,
-        context: "../server",
-      },
-      { parent: this }
-    );
-
-    const cluster = new aws.ecs.Cluster(`${name}-cluster`);
 
     const vpc = new awsx.ec2.Vpc(
       `${name}-vpc`,
@@ -100,7 +99,7 @@ export class BackendService extends pulumi.ComponentResource {
     this.lb = new aws.lb.LoadBalancer(
       `${name}-lb`,
       {
-        namePrefix: "lb-",
+        namePrefix: "api-",
         loadBalancerType: "application",
         securityGroups: [lbSecurityGroup.id],
         subnets: vpc.publicSubnetIds,
@@ -110,7 +109,7 @@ export class BackendService extends pulumi.ComponentResource {
       { parent: this }
     );
 
-    const lbTargetGroup = new aws.lb.TargetGroup(
+    this.lbTargetGroup = new aws.lb.TargetGroup(
       `${name}-tg`,
       {
         port: 3000,
@@ -132,16 +131,65 @@ export class BackendService extends pulumi.ComponentResource {
       { parent: this, dependsOn: [this.lb] }
     );
 
-    const listener = new aws.lb.Listener("app-listener", {
+    let certificate: AcmCertificate | undefined;
+    let httpListener: aws.lb.Listener;
+    let httpListenerDefaultAction: pulumi.Input<
+      pulumi.Input<aws.types.input.lb.ListenerDefaultAction>[]
+    >;
+
+    this.apiDomain = customDomainName ? `api.${customDomainName}` : undefined;
+    this.apiUrl = this.apiDomain
+      ? pulumi.interpolate`https://${this.apiDomain}`
+      : pulumi.interpolate`http://${this.lb.dnsName}`;
+
+    if (this.apiDomain) {
+      const hostedZone = aws.route53.getZoneOutput({ name: customDomainName });
+
+      certificate = new AcmCertificate(
+        name,
+        {
+          domainName: this.apiDomain,
+          hostedZoneId: hostedZone.id,
+        },
+        { parent: this }
+      );
+
+      const httpsListener = new aws.lb.Listener(
+        `${name}-https-listener`,
+        {
+          loadBalancerArn: this.lb.arn,
+          port: 443,
+          protocol: "HTTPS",
+          sslPolicy: "ELBSecurityPolicy-2016-08",
+          certificateArn: certificate.validation.certificateArn,
+          defaultActions: [
+            { type: "forward", targetGroupArn: this.lbTargetGroup.arn },
+          ],
+        },
+        { parent: this }
+      );
+
+      new DnsRecord(
+        `${name}-api-record`,
+        {
+          hostedZone,
+          domainName: this.apiDomain,
+          target: {
+            dnsName: this.lb.dnsName,
+            zoneId: this.lb.zoneId,
+            evaluateTargetHealth: true,
+          },
+        },
+        { parent: this, dependsOn: [this.lb] }
+      );
+    }
+
+    httpListenerDefaultAction = this.getHttpListenerDefaultAction();
+    httpListener = new aws.lb.Listener(`${name}-http-listener`, {
       loadBalancerArn: this.lb.arn,
       port: 80,
       protocol: "HTTP",
-      defaultActions: [
-        {
-          type: "forward",
-          targetGroupArn: lbTargetGroup.arn,
-        },
-      ],
+      defaultActions: httpListenerDefaultAction,
     });
 
     const service = new awsx.ecs.FargateService(
@@ -152,7 +200,7 @@ export class BackendService extends pulumi.ComponentResource {
         taskDefinitionArgs: {
           container: {
             name: `${name}-container`,
-            image: image.imageUri,
+            image: imageUri,
             cpu: 128,
             memory: 512,
             essential: true,
@@ -160,7 +208,7 @@ export class BackendService extends pulumi.ComponentResource {
               {
                 containerPort: 3000,
                 hostPort: 3000,
-                targetGroup: lbTargetGroup,
+                targetGroup: this.lbTargetGroup,
               },
             ],
           },
@@ -171,9 +219,29 @@ export class BackendService extends pulumi.ComponentResource {
           assignPublicIp: false,
         },
       },
-      { parent: this, dependsOn: [this.lb] }
+      { parent: this, dependsOn: [httpListener] }
     );
 
     this.registerOutputs();
+  }
+
+  private getHttpListenerDefaultAction() {
+    return this.apiDomain
+      ? [
+          {
+            type: "redirect",
+            redirect: {
+              protocol: "HTTPS",
+              port: "443",
+              statusCode: "HTTP_301",
+            },
+          },
+        ]
+      : [
+          {
+            type: "forward",
+            targetGroupArn: this.lbTargetGroup.arn,
+          },
+        ];
   }
 }

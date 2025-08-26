@@ -1,4 +1,4 @@
-name: pulumi-s3
+name: ecs-s3-custom
 description: A minimal AWS TypeScript Pulumi program
 runtime:
   name: nodejs

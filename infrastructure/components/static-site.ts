@@ -45,7 +45,11 @@ export class StaticSite extends ComponentResource {
       new DnsRecord(name, {
         hostedZone,
         domainName: customDomainName,
-        cloudfrontDistribution: cloudfront.distribution,
+        target: {
+          dnsName: cloudfront.distribution.domainName,
+          zoneId: cloudfront.distribution.hostedZoneId,
+          evaluateTargetHealth: false,
+        },
       });
 
     this.registerOutputs();

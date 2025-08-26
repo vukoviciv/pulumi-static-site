@@ -1,4 +1,5 @@
 import * as aws from "@pulumi/aws";
+import * as pulumi from "@pulumi/pulumi";
 import { ComponentResource, Output } from "@pulumi/pulumi";
 
 type ComponentArgs = {
@@ -9,8 +10,12 @@ export class AcmCertificate extends ComponentResource {
   certificate: aws.acm.Certificate;
   validation: aws.acm.CertificateValidation;
 
-  constructor(name: string, componentArgs: ComponentArgs) {
-    super("pulumiS3:acm:Certificate", name, {}, {});
+  constructor(
+    name: string,
+    componentArgs: ComponentArgs,
+    opts: pulumi.ComponentResourceOptions = {}
+  ) {
+    super("pulumiS3:acm:Certificate", name, {}, opts);
 
     this.certificate = new aws.acm.Certificate(
       `${componentArgs.domainName}-certificate`,

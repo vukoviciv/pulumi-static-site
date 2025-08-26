@@ -1,3 +1,4 @@
 config:
   pulumi-s3:siteDir: test
   pulumi-s3:name: ecs-s3
+  customDomain: ivanasimic.online

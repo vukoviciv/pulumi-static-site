@@ -10,7 +10,7 @@ import { get as getHello } from "@/api/hello";
 import { get as getGoodbye } from "@/api/goodbye";
 import { ref } from "vue";
 
-const msg = ref("Pulumi static");
+const msg = ref("Klikni, aj klikni");
 
 const handleHello = async () => {
   const response = await getHello();
