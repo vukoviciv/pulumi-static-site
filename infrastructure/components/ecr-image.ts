@@ -5,7 +5,7 @@ export class EcrImage extends pulumi.ComponentResource {
   image: awsx.ecr.Image;
 
   constructor(name: string) {
-    super("pulumi:ECR:image", name, {}, {});
+    super("pulumi:ECR", name, {}, {});
     const repository = new awsx.ecr.Repository(
       `${name}-ecr-repository`,
       {
