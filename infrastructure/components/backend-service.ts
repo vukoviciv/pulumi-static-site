@@ -12,13 +12,13 @@ type ComponentArgs = {
 export class BackendService extends pulumi.ComponentResource {
   lb: aws.lb.LoadBalancer;
   apiUrl: pulumi.Output<string>;
-  lbTargetGroup: any; // TODO: type
+  lbTargetGroup: aws.lb.TargetGroup;
   apiDomain?: string;
 
   constructor(name: string, componentArgs: ComponentArgs) {
     super("pulumi:ECS", name, {}, {});
 
-    const { customDomainName, imageUri } = componentArgs; // TODO: add others
+    const { customDomainName, imageUri } = componentArgs;
 
     const cluster = new aws.ecs.Cluster(
       `${name}-cluster`,
@@ -132,17 +132,18 @@ export class BackendService extends pulumi.ComponentResource {
     );
 
     let certificate: AcmCertificate | undefined;
-    let listener: aws.lb.Listener;
+    let httpListener: aws.lb.Listener;
     let httpListenerDefaultAction: pulumi.Input<
       pulumi.Input<aws.types.input.lb.ListenerDefaultAction>[]
     >;
 
     this.apiDomain = customDomainName ? `api.${customDomainName}` : undefined;
+    this.apiUrl = this.apiDomain
+      ? pulumi.interpolate`https://${this.apiDomain}`
+      : pulumi.interpolate`http://${this.lb.dnsName}`;
 
     if (this.apiDomain) {
-      const hostedZone = aws.route53.getZoneOutput({
-        name: customDomainName,
-      });
+      const hostedZone = aws.route53.getZoneOutput({ name: customDomainName });
 
       certificate = new AcmCertificate(
         name,
@@ -153,7 +154,7 @@ export class BackendService extends pulumi.ComponentResource {
         { parent: this }
       );
 
-      listener = new aws.lb.Listener(
+      const httpsListener = new aws.lb.Listener(
         `${name}-https-listener`,
         {
           loadBalancerArn: this.lb.arn,
@@ -184,17 +185,12 @@ export class BackendService extends pulumi.ComponentResource {
     }
 
     httpListenerDefaultAction = this.getHttpListenerDefaultAction();
-
-    listener = new aws.lb.Listener(`${name}-http-listener`, {
+    httpListener = new aws.lb.Listener(`${name}-http-listener`, {
       loadBalancerArn: this.lb.arn,
       port: 80,
       protocol: "HTTP",
       defaultActions: httpListenerDefaultAction,
     });
-
-    this.apiUrl = this.apiDomain
-      ? pulumi.interpolate`https://${this.apiDomain}`
-      : pulumi.interpolate`http://${this.lb.dnsName}`;
 
     const service = new awsx.ecs.FargateService(
       `${name}-fargate-service`,
@@ -223,7 +219,7 @@ export class BackendService extends pulumi.ComponentResource {
           assignPublicIp: false,
         },
       },
-      { parent: this, dependsOn: [listener] }
+      { parent: this, dependsOn: [httpListener] }
     );
 
     this.registerOutputs();
